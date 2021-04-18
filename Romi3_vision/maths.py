@@ -12,7 +12,7 @@ camera_matrix = ud.mtx
 dist = ud.dist
 
 #points for drawn axes when doing pretty image
-axis = np.float32([[0,0,0], [0.15,0,0], [0,0.15,0], [0,0,0.15]]).reshape(-1,3)
+axis = np.float32([[0,0,0], [0.1,0,0], [0,0.1,0], [0,0,-0.1]]).reshape(-1,3)
 hasNewLocation = False
 
 # get pose of a Marker object in world coordinates
@@ -31,10 +31,11 @@ def getWorldPose(tracked_marker):
 # draw nice axes markers on marker for visualization
 def draw(img, corners, rotation, translation):
     imgpts, jac = cv2.projectPoints(axis, rotation, translation, camera_matrix, dist)
-    corner = tuple(corners[0].ravel())
-    img = cv2.line(img, tuple(imgpts[0].ravel()), tuple(imgpts[2].ravel()), (0,255,0), 5)
-    img = cv2.line(img, tuple(imgpts[0].ravel()), tuple(imgpts[1].ravel()), (255,0,0), 5)
-    img = cv2.line(img, tuple(imgpts[0].ravel()), tuple(imgpts[3].ravel()), (0,0,255), 5)
+    # corner = tuple(corners[0].ravel())
+    # img = cv2.line(img, tuple(imgpts[0].ravel()), tuple(imgpts[2].ravel()), (0,255,0), 5)
+    # img = cv2.line(img, tuple(imgpts[0].ravel()), tuple(imgpts[1].ravel()), (255,0,0), 5)
+    # img = cv2.line(img, tuple(imgpts[0].ravel()), tuple(imgpts[3].ravel()), (0,0,255), 5)
+    # img = cv2.circle(img, tuple(imgpts[0].ravel()), 3, (255,0,0),-1)
     return img
 
 # get rotation and translation for a marker
@@ -65,8 +66,12 @@ def exec(img = None):
 # once again, this math is way over my head so...
 # function credit: https://stackoverflow.com/questions/44726404/camera-pose-from-solvepnp
 def getCameraLocationForMarker(tracked_marker):
-    rotation_matrix = cv2.Rodrigues(tracked_marker.rotation)[0]
+    rotation_matrix = cv2.Rodrigues(-tracked_marker.rotation)[0]
     camera_pos = -np.matrix(rotation_matrix) * np.matrix(tracked_marker.translation)
+    (x,y,z) = camera_pos
+    # x = -(2 * tracked_marker.world_pts[0]) - x
+    # y = -(2 * tracked_marker.world_pts[1]) - y
+    # z = -(2 * tracked_marker.world_pts[2]) - z
     return camera_pos
 
 # get camera location for each marker and then average the results:

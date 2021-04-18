@@ -6,6 +6,8 @@ import golfb
 import maths
 import copy
 import cv2
+import marker
+import findMarkerLocations as fml
 
 window_detection_name="golf ball threshold"
 max_value = 255
@@ -46,12 +48,15 @@ cv2.createTrackbar("high v", window_detection_name , high_V, max_value, on_highV
 
 
 while True:
-    detectAruco.exec(False, False)
+    detectAruco.exec(True, False)
     frame = copy.copy(detectAruco.frame)
     img = golfb.detectBall(frame)
-    maths.exec(img=img)
+    maths.exec(img)
     pos = maths.getCameraLocation()
-    # print(pos[0], pos[1], pos[2])
+    for key in marker.markers:
+        mk = marker.markers[key]
+        # if mk.found: fml.locateMarkers(mk)
+    print(pos)
 
     cv2.imshow(window_detection_name, golfb.frame_threshold)
     cv2.imshow("frame", img)

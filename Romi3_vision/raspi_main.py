@@ -34,7 +34,7 @@ while True:
 
     # update networktables
     nt.putNumber('robot_x', robot_location[0])
-    nt.putNumber('robot_y', robot_location[1])
+    nt.putNumber('robot_y', robot_location[2]) # robot_location[1] result is height, so not useful at all - instead send 0 and 2
 
     nt.putBoolean('tracking_ball', ball_location[0])
     nt.putNumber('ball_x', ball_location[1])

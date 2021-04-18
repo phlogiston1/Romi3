@@ -17,7 +17,7 @@ def showFrame(img):
 print("starting detectAruco")
 print(" getting aruco dictionary")
 # change for different markers:
-arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_ARUCO_ORIGINAL)
 arucoParams = cv2.aruco.DetectorParameters_create()
 
 print(" initializing video stream")
@@ -43,14 +43,15 @@ def getFrame(thresh):
     global frame
     global gray
 
-    ret, frame = vs.read()
+    _, frame = vs.read()
+    frame = cv2.rotate(frame, cv2.ROTATE_180) #!!!! UNTESTEDDDDDD TODO rotation
     frame = undistort.undistort(frame)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     # if thresh parameter is true, use thresholded image
     if(thresh):
         #threshold to clean up blooming from light from retroreflector
-        ret2, frame = cv2.threshold(gray, thresh_min, 255, cv2.THRESH_BINARY)
+        _, frame = cv2.threshold(gray, thresh_min, 255, cv2.THRESH_BINARY)
         frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR) #aruco detection only works with color
 
     return (frame, gray)
@@ -63,7 +64,9 @@ def draw(markerCorner, markerID):
 
     corners = corners.reshape((-1,1,2))
 
-    cv2.polylines(frame, [corners], True, (0,255,0), 2)
+    col = (0,0,255)
+    if markerID in marker.markers: col = (0,255,0)
+    cv2.polylines(frame, [corners], True, col, 2)
 
     # draw the ArUco marker ID on the frame
     cv2.putText(frame, str(markerID),
@@ -88,7 +91,6 @@ def exec(show, thresh):
 
     #find aruco markers:
     (corners, ids, rejected) = cv2.aruco.detectMarkers(frame, arucoDict, parameters=arucoParams)
-
     if(len(corners) < 1): return # end function if no matches
 
     ids = ids.flatten()

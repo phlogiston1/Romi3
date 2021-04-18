@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Spark;
@@ -14,6 +16,7 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
 import edu.wpi.first.wpilibj.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.wpilibj.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -26,9 +29,6 @@ public class RomiDrivetrain extends SubsystemBase {
   private static final double kCountsPerRevolution = 1440.0;
   private static final double kWheelDiameterMeter = 0.07;
 
-  // private static double lDriftAccumulator = 0;
-  // private static double rDriftAccumulator = 0;
-
   // The Romi has the left and right motors set to
   // PWM channels 0 and 1 respectively
   private final Spark m_leftMotor = new Spark(0);
@@ -38,10 +38,20 @@ public class RomiDrivetrain extends SubsystemBase {
   // to use DIO pins 4/5 and 6/7 for the left and right
   private final Encoder m_leftEncoder = new Encoder(4, 5);
   private final Encoder m_rightEncoder = new Encoder(6, 7);
-  public DifferentialDrive dDrive = new DifferentialDrive(m_leftMotor, m_rightMotor); 
+
+  private SimpleMotorFeedforward leftFeedforward = new SimpleMotorFeedforward(ksTelopVelocity,kvTeleopVelocity,kaTeleopVelocity);
+  private SimpleMotorFeedforward rightFeedforward = new SimpleMotorFeedforward(ksTelopVelocity,kvTeleopVelocity,kaTeleopVelocity);
+  private PIDController lPidController = new PIDController(kpTelopVelocity, kiTeleopVelocity, kdTeleopVelocity);
+  private PIDController rPidController = new PIDController(kpTelopVelocity, kiTeleopVelocity, kdTeleopVelocity);
+
   private final RomiGyro gyro = new RomiGyro(); 
   private final BuiltInAccelerometer accelerometer = new BuiltInAccelerometer();
   private final DifferentialDriveOdometry odometry;
+  
+  public DifferentialDrive dDrive = new DifferentialDrive(m_leftMotor, m_rightMotor); 
+  private Field2d field = new Field2d();
+  
+  private NetworkTable visionTable = NetworkTableInstance.getDefault().getTable("/vision");
   /** Creates a new RomiDrivetrain. */
   public RomiDrivetrain() {
     // Use inches as unit for encoder distances
@@ -49,36 +59,67 @@ public class RomiDrivetrain extends SubsystemBase {
     m_rightEncoder.setDistancePerPulse((Math.PI * kWheelDiameterMeter) / kCountsPerRevolution);
     m_leftMotor.enableDeadbandElimination(true);
     m_rightMotor.enableDeadbandElimination(true);
+    
+    SmartDashboard.putData("Field", field);
+    
     resetEncoders();
-
     odometry = new DifferentialDriveOdometry(gyro.getHeading());
   }
+  
+  @Override
+  public void periodic() {
+    double robotX = visionTable.getEntry("robot_x").getDouble(0);
+    double robotY = visionTable.getEntry("robot_y").getDouble(0);
+    field.setRobotPose(robotX, robotY, gyro.getHeading());
+    if(robotX == 0 && robotY == 0){
+      // Update the odometry in the periodic block
+      odometry.update(gyro.getHeading(), m_leftEncoder.getDistance(), m_rightEncoder.getDistance());
+    } else {
+      //use visual odometry
+      resetEncoders();
+      odometry.resetPosition(new Pose2d(robotX, robotY, gyro.getHeading()), gyro.getHeading());
+    }
+  }
+  
+  /**
+   * simple tank drive
+   * @param leftSpeed left percentage
+   * @param rightSpeed right percentage
+   */
   public void tankDrive(double leftSpeed, double rightSpeed) {
     m_leftMotor.set(leftSpeed);
     m_rightMotor.set(rightSpeed);
     dDrive.feed();
   }
   
+  /**
+   * arcade style drive with single joystick. uses velocity drive to make it feel better (in theory)
+   * @param speed the forward component/robot velocity. percentage, but will be multiplied by 20 for velocity range
+   * @param turn the turn component/X axis of joystick.
+   */
   public void arcadeDrive(double speed, double turn) {
     velocityDrive((speed - turn)*20,(speed + turn)*20);
   }
-  private SimpleMotorFeedforward leftFeedforward = new SimpleMotorFeedforward(ksTelopVelocity,kvTeleopVelocity,kaTeleopVelocity);
-  private SimpleMotorFeedforward rightFeedforward = new SimpleMotorFeedforward(ksTelopVelocity,kvTeleopVelocity,kaTeleopVelocity);
-  private PIDController lPidController = new PIDController(kpTelopVelocity, kiTeleopVelocity, kdTeleopVelocity);
-  private PIDController rPidController = new PIDController(kpTelopVelocity, kiTeleopVelocity, kdTeleopVelocity);
   
+  /**
+   * tank velocity drive
+   * @param lSpeed
+   * @param rSpeed
+   */
   public void velocityDrive(double lSpeed, double rSpeed){
-    
-    double lpid = lPidController.calculate(Units.metersToInches(-getLeftVelocity()),lSpeed);
-    double lffd = leftFeedforward.calculate(Units.metersToInches(-getLeftVelocity()));
-    double rpid = rPidController.calculate(Units.metersToInches(getRightVelocity()),rSpeed);
-    double rffd = rightFeedforward.calculate(Units.metersToInches(getRightVelocity()));
+    // i started writing this code with some things in inches and some in meters. this was a bad idea, but i had already tuned the loops
+    // for inches, so i just covert everything to inches here.
+    double lpid = lPidController.calculate( Units.metersToInches( -getLeftVelocity() ), lSpeed );
+    double lffd = leftFeedforward.calculate( Units.metersToInches( -getLeftVelocity() ));
+    double rpid = rPidController.calculate( Units.metersToInches( getRightVelocity() ), rSpeed );
+    double rffd = rightFeedforward.calculate( Units.metersToInches( getRightVelocity() ));
     
     SmartDashboard.putNumber("l velocity setpoint", lSpeed);
     SmartDashboard.putNumber("r velocity setpoint", rSpeed);
     SmartDashboard.putNumber("l velocity", getLeftVelocity());
     SmartDashboard.putNumber("r velocity", getRightVelocity());
 
+    // need to be negative, because reasons.
     tankDrive(-(lpid + lffd), -(rpid + rffd));
   }
 
@@ -173,11 +214,6 @@ public class RomiDrivetrain extends SubsystemBase {
     gyro.reset();
   }
 
-  @Override
-  public void periodic() {
-    // Update the odometry in the periodic block
-    odometry.update(gyro.getHeading(), m_leftEncoder.getDistance(), m_rightEncoder.getDistance());
-  }
 
   /**
    * Returns the currently estimated pose of the robot.
