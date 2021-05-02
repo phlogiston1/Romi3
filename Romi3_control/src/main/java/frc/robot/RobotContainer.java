@@ -18,9 +18,10 @@ import edu.wpi.first.wpilibj.trajectory.TrajectoryConfig;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.trajectory.constraint.DifferentialDriveVoltageConstraint;
 import frc.robot.commands.ChezzyDrive;
+import frc.robot.commands.auto.AutoCommand;
 import frc.robot.commands.auto.paths.AutoPath;
 import frc.robot.commands.auto.paths.PathBase;
-import frc.robot.commands.auto.paths.TestPath;
+import frc.robot.commands.auto.paths.SecondPath;
 import frc.robot.subsystems.RomiDrivetrain;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -44,7 +45,7 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final Joystick drvJoy = new Joystick(0);
 
-  private final RomiDrivetrain romiDrivetrain = new RomiDrivetrain();
+  final RomiDrivetrain romiDrivetrain = new RomiDrivetrain();
 
   // private final ExampleCommand m_autoCommand = new
   // ExampleCommand(romiDrivetrain);
@@ -125,14 +126,13 @@ public class RobotContainer {
    *
    * @return the command to run in autonomous
    */
-  public PathBase getAutonomousCommand() {
-    try {
-      return new TestPath(romiDrivetrain);
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-    return null;
-
+  public Command getAutonomousCommand() {
+    // try {
+    //   return new SecondPath(romiDrivetrain);
+    // } catch (IOException e) {
+    //   e.printStackTrace();
+    // }
+    // return null;
+      return new AutoCommand(romiDrivetrain);
   }
 }

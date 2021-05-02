@@ -39,6 +39,8 @@ public class PathBase extends CommandBase implements Action{
     DifferentialDriveVoltageConstraint autoVoltageConstraint;
     RamseteCommand ramsete;
     public boolean finished = false;
+    protected boolean reversed = false;
+    public boolean hasRun = false;
 
     /**
      * create a new PathBase instance.
@@ -60,6 +62,11 @@ public class PathBase extends CommandBase implements Action{
         //RobotState.zeroHeading();
         //RobotState.resetOdometry(new Pose2d(new Translation2d(0,0), new Rotation2d(0)));
         //RobotState.setOdometryStart();
+    }
+
+    @Override
+    public void initialize(){
+        start();
     }
 
     /**
@@ -103,7 +110,7 @@ public class PathBase extends CommandBase implements Action{
     public TrajectoryConfig getTrajectoryConfig(){
         setVoltageConstraint(kAutoMaxVoltage);
         return new TrajectoryConfig(kMaxSpeedMetersPerSecond,kMaxAccelerationMetersPerSecondSquared)
-        .setKinematics(kDriveKinematics);//.addConstraint(autoVoltageConstraint);
+        .setKinematics(kDriveKinematics).addConstraint(autoVoltageConstraint).setReversed(reversed); //todo does this work
     }
 
     //get the ramsete command for the path
@@ -130,6 +137,7 @@ public class PathBase extends CommandBase implements Action{
      */
     @Override
     public void start() {
+        hasRun = true;
         driveTrain.resetOdometry(trajectory_.getInitialPose());
         System.out.println("starting path");
         ramsete = new RamseteCommand(
@@ -147,7 +155,9 @@ public class PathBase extends CommandBase implements Action{
             new PIDController(kPDriveVel, 0, 0),
             driveTrain::tankDriveVolts, driveTrain
         );
-        CommandScheduler.getInstance().schedule(ramsete.andThen(() -> driveTrain.tankDriveVolts(0,0)));
-        finished = true;
+        CommandScheduler.getInstance().schedule(ramsete.andThen(() -> {
+            driveTrain.tankDriveVolts(0,0);
+            finished = true;
+        }));
     }
 }

@@ -9,17 +9,21 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Spark;
-import edu.wpi.first.wpilibj.Ultrasonic.Unit;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.controller.SimpleMotorFeedforward;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.estimator.DifferentialDrivePoseEstimator;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
+import edu.wpi.first.wpilibj.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.wpilibj.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpiutil.math.MatBuilder;
+import edu.wpi.first.wpiutil.math.Nat;
 import frc.robot.sensors.RomiGyro;
 
 import static frc.robot.Constants.DriveConstants.*;
@@ -46,7 +50,8 @@ public class RomiDrivetrain extends SubsystemBase {
 
   private final RomiGyro gyro = new RomiGyro(); 
   private final BuiltInAccelerometer accelerometer = new BuiltInAccelerometer();
-  private final DifferentialDriveOdometry odometry;
+  // private final DifferentialDriveOdometry odometry;
+  private final DifferentialDrivePoseEstimator poseEstimator;
   
   public DifferentialDrive dDrive = new DifferentialDrive(m_leftMotor, m_rightMotor); 
   private Field2d field = new Field2d();
@@ -63,24 +68,35 @@ public class RomiDrivetrain extends SubsystemBase {
     SmartDashboard.putData("Field", field);
     
     resetEncoders();
-    odometry = new DifferentialDriveOdometry(gyro.getHeading());
+    // odometry = new DifferentialDriveOdometry(gyro.getHeading());
+    poseEstimator = new DifferentialDrivePoseEstimator(new Rotation2d(), new Pose2d(), 
+            new MatBuilder<>(Nat.N5(), Nat.N1()).fill(0.02, 0.02, 0.01, 0.02, 0.02), 
+            new MatBuilder<>(Nat.N3(), Nat.N1()).fill(0.02, 0.02, 0.01), 
+            new MatBuilder<>(Nat.N3(), Nat.N1()).fill(0.1, 0.1, 0.01));
   }
   
   @Override
   public void periodic() {
-    double robotX = visionTable.getEntry("robot_x").getDouble(0);
-    double robotY = visionTable.getEntry("robot_y").getDouble(0);
-    field.setRobotPose(robotX, robotY, gyro.getHeading());
-    if(robotX == 0 && robotY == 0){
-      // Update the odometry in the periodic block
-      odometry.update(gyro.getHeading(), m_leftEncoder.getDistance(), m_rightEncoder.getDistance());
-    } else {
+    field.setRobotPose(getVisionPose());
+    var vPose = getVisionPose();
+    if (vPose.getX() != 0 || vPose.getY() != 0) {
       //use visual odometry
-      resetEncoders();
-      odometry.resetPosition(new Pose2d(robotX, robotY, gyro.getHeading()), gyro.getHeading());
+      //poseEstimator.addVisionMeasurement(vPose, Timer.getFPGATimestamp());
+      //odometry.resetPosition(new Pose2d(-robotY, robotX, odometry.getPoseMeters().getRotation()), gyro.getHeading());
     }
+    poseEstimator.update(gyro.getHeading(), new DifferentialDriveWheelSpeeds(getLeftVelocity(), getRightVelocity()), getLeftDistanceMeter(), getRightDistanceMeter());
+    SmartDashboard.putNumber("odo_rx", getPose().getX());
+    SmartDashboard.putNumber("odo_ry", getPose().getY());
   }
-  
+
+  private Pose2d getVisionPose(){
+    double robotX = visionTable.getEntry("robot_x").getDouble(0);
+    robotX -= 0.6;
+    double robotY = visionTable.getEntry("robot_y").getDouble(0);
+    robotY += 2;
+    return new Pose2d(robotY, robotX, poseEstimator.getEstimatedPosition().getRotation());
+  }
+
   /**
    * simple tank drive
    * @param leftSpeed left percentage
@@ -220,7 +236,7 @@ public class RomiDrivetrain extends SubsystemBase {
    * @return The pose
    */
   public Pose2d getPose() {
-    return odometry.getPoseMeters();
+    return poseEstimator.getEstimatedPosition();
   }
 
   /**
@@ -237,7 +253,8 @@ public class RomiDrivetrain extends SubsystemBase {
    */
   public void resetOdometry(Pose2d pose) {
     resetEncoders();
-    odometry.resetPosition(pose, gyro.getHeading());
+    //odometry.resetPosition(pose, gyro.getHeading());
+    poseEstimator.resetPosition(pose, gyro.getHeading());
   }
 
   /**

@@ -4,10 +4,13 @@
 
 package frc.robot;
 
+import java.io.IOException;
+
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.commands.auto.paths.PathBase;
+import frc.robot.commands.auto.paths.*;
+import frc.robot.subsystems.RomiDrivetrain;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -16,9 +19,10 @@ import frc.robot.commands.auto.paths.PathBase;
  * project.
  */
 public class Robot extends TimedRobot {
-  private PathBase m_autonomousCommand;
+  private Command m_autonomousCommand;
 
   private RobotContainer m_robotContainer;
+  private PathBase path1, path2, path3;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -29,6 +33,14 @@ public class Robot extends TimedRobot {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
+    RomiDrivetrain subsystem = m_robotContainer.romiDrivetrain;
+    try{
+        path1 = new FirstPath(subsystem);
+        path2 = new SecondPath(subsystem);
+        path3 = new ThirdPath(subsystem);
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
   }
 
   /**
@@ -61,13 +73,19 @@ public class Robot extends TimedRobot {
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
-      m_autonomousCommand.start();
+      // m_autonomousCommand.start();
+      // CommandScheduler.getInstance().schedule(m_autonomousCommand);
     }
   }
 
   /** This function is called periodically during autonomous. */
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+    System.out.println(path1.finished);
+    if (!path1.hasRun) path1.start();
+    if (path1.finished && !path2.hasRun) path2.start();
+    if (path2.finished && !path3.hasRun) path3.start();
+  }
 
   @Override
   public void teleopInit() {

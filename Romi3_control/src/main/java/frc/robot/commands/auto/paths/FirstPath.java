@@ -20,7 +20,7 @@ import frc.robot.subsystems.RomiDrivetrain;
 /**
  * Testing the PathBase framework. just call start on this to drive the path.
  */
-public class TestPath extends PathBase {
+public class FirstPath extends PathBase {
     /**
      * creates a new trajectory, and then sets it in the PathBase as the one to
      * follow. Call start on this to drive the path.
@@ -28,35 +28,18 @@ public class TestPath extends PathBase {
      * @param subsystem drive train to pass to PathBase
      * @throws IOException
      */
-    public TestPath(RomiDrivetrain subsystem) throws IOException {
+    public FirstPath(RomiDrivetrain subsystem) throws IOException {
         super(subsystem);
+        reversed = true;
         Trajectory exampleTrajectory = TrajectoryGenerator.generateTrajectory(
             // Start at the origin facing the +X direction
-            new Pose2d(0, 0, new Rotation2d(0)),
+            new Pose2d(0, 0, Rotation2d.fromDegrees(0)),
             List.of(
-                //first cross through
-                new Translation2d(0.22, 0),
-                new Translation2d(0.6,0.6),
-                //first straight
-                new Translation2d(0.8, 0.7),
-                new Translation2d(1.8, 0.7),
-                //second cross through
-                new Translation2d(2, 0),
-                new Translation2d(2.1,0),
-                //drive around
-                new Translation2d(2.5,0.3),
-                new Translation2d(2.2, 0.5),
-                new Translation2d(2.1, 0.8),
-                new Translation2d(1.8, 0.3),
-                new Translation2d(1.7, 0.2),
-                new Translation2d(1.6, 0.1),
-                new Translation2d(1.5, -0.3),
-                //second strait
-                new Translation2d(1, -0.3),
-                new Translation2d(0.5, -0.3)
+                new Translation2d(-0.2, -0.1)
             ),
-        new Pose2d(0, -0.3, Rotation2d.fromDegrees(-180)),
-        getTrajectoryConfig());
+            new Pose2d(-0.25,-0.4, Rotation2d.fromDegrees(95)),
+            getTrajectoryConfig()
+        );
         //set the trajectory
         setTrajectory(exampleTrajectory);
         System.out.println("trajectory ready");
