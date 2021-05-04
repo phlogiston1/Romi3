@@ -35,9 +35,9 @@ public class FirstPath extends PathBase {
             // Start at the origin facing the +X direction
             new Pose2d(0, 0, Rotation2d.fromDegrees(0)),
             List.of(
-                new Translation2d(-0.2, -0.1)
             ),
-            new Pose2d(-0.25,-0.4, Rotation2d.fromDegrees(95)),
+            new Pose2d(-0.3,-0.35, Rotation2d.fromDegrees(90)),
+            // new Pose2d(-2, 0, Rotation2d.fromDegrees(0)),
             getTrajectoryConfig()
         );
         //set the trajectory

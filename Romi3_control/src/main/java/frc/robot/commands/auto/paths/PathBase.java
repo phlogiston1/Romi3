@@ -10,11 +10,14 @@ package frc.robot.commands.auto.paths;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.controller.RamseteController;
 import edu.wpi.first.wpilibj.controller.SimpleMotorFeedforward;
+import edu.wpi.first.wpilibj.geometry.Pose2d;
+import edu.wpi.first.wpilibj.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryConfig;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryUtil;
@@ -35,7 +38,7 @@ import static frc.robot.Constants.DriveConstants.*;
  */
 public class PathBase extends CommandBase implements Action{
     RomiDrivetrain driveTrain;
-    Trajectory trajectory_;
+    public Trajectory trajectory_;
     DifferentialDriveVoltageConstraint autoVoltageConstraint;
     RamseteCommand ramsete;
     public boolean finished = false;
@@ -143,7 +146,7 @@ public class PathBase extends CommandBase implements Action{
         ramsete = new RamseteCommand(
             trajectory_,
             driveTrain::getPose,
-            new RamseteController(0, 0),
+            new RamseteController(),
             new SimpleMotorFeedforward(
                 ksVolts,
                 kvVoltSecondsPerMeter,

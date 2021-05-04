@@ -7,6 +7,8 @@ package frc.robot;
 import java.io.IOException;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.geometry.Pose2d;
+import edu.wpi.first.wpilibj.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.commands.auto.paths.*;
@@ -22,7 +24,7 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private RobotContainer m_robotContainer;
-  private PathBase path1, path2, path3;
+  private PathBase path1, path2, path3, path4;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -38,6 +40,7 @@ public class Robot extends TimedRobot {
         path1 = new FirstPath(subsystem);
         path2 = new SecondPath(subsystem);
         path3 = new ThirdPath(subsystem);
+        path4 = new FourthPath(subsystem);
     } catch (IOException e) {
         e.printStackTrace();
     }
@@ -70,21 +73,39 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    // path4.start();
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
       // m_autonomousCommand.start();
       // CommandScheduler.getInstance().schedule(m_autonomousCommand);
     }
+    // new TestPath(m_robotContainer.romiDrivetrain).start();
   }
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    System.out.println(path1.finished);
-    if (!path1.hasRun) path1.start();
-    if (path1.finished && !path2.hasRun) path2.start();
-    if (path2.finished && !path3.hasRun) path3.start();
+
+    // System.out.println(path1.finished);
+    if (!path1.hasRun) {
+      m_robotContainer.romiDrivetrain.resetVisionOffsets(path1.trajectory_.getInitialPose());
+      path1.start();
+    }
+    if (path1.finished && !path2.hasRun) {
+      m_robotContainer.romiDrivetrain.resetVisionOffsets(path2.trajectory_.getInitialPose());
+      path2.start();
+    }
+    if (path2.finished && !path3.hasRun) {
+      m_robotContainer.romiDrivetrain.resetOdometry(new Pose2d(-0.93,-0.5,new Rotation2d(90)));
+      m_robotContainer.romiDrivetrain.resetVisionOffsets(path3.trajectory_.getInitialPose());
+      path3.start();
+    }
+    if (path3.finished && !path4.hasRun) {
+      m_robotContainer.romiDrivetrain.resetOdometry(new Pose2d(0,0,new Rotation2d(0)));
+      m_robotContainer.romiDrivetrain.resetVisionOffsets(path4.trajectory_.getInitialPose());
+      path4.start();
+    }
   }
 
   @Override

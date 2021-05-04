@@ -30,17 +30,17 @@ public class ThirdPath extends PathBase {
      */
     public ThirdPath(RomiDrivetrain subsystem) throws IOException {
         super(subsystem);
-        //reversed = true;
+        reversed = true;
         Trajectory exampleTrajectory = TrajectoryGenerator.generateTrajectory(
             // Start at the origin facing the +X direction
-            new Pose2d(0.9,0.3, Rotation2d.fromDegrees(450)),
+            new Pose2d(-0.93,-0.55, Rotation2d.fromDegrees(90)),
             List.of(
-                new Translation2d(0.9, 0),
-                new Translation2d(0.9,-0.4),
-                new Translation2d(1.4, -0.4),
-                new Translation2d(1.5, -0.1)
+                // new Translation2d(-0.95, -0.2),
+                // new Translation2d(-1.35, 0),
+                new Translation2d(-0.9, -0.25),
+                new Translation2d(-1.72, -0.37)
             ),
-            new Pose2d(1.4,0.2, Rotation2d.fromDegrees(630)),
+            new Pose2d(-1.35,-1, Rotation2d.fromDegrees(100)),
             getTrajectoryConfig()
         );
         //set the trajectory

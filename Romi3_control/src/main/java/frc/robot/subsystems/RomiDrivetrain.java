@@ -32,6 +32,8 @@ import static frc.robot.Constants.DriveConstants.*;
 public class RomiDrivetrain extends SubsystemBase {
   private static final double kCountsPerRevolution = 1440.0;
   private static final double kWheelDiameterMeter = 0.07;
+  public double visionOffsetX = -0.6;
+  public double visionOffsetY = 2;
 
   // The Romi has the left and right motors set to
   // PWM channels 0 and 1 respectively
@@ -81,8 +83,8 @@ public class RomiDrivetrain extends SubsystemBase {
     var vPose = getVisionPose();
     if (vPose.getX() != 0 || vPose.getY() != 0) {
       //use visual odometry
-      //poseEstimator.addVisionMeasurement(vPose, Timer.getFPGATimestamp());
-      //odometry.resetPosition(new Pose2d(-robotY, robotX, odometry.getPoseMeters().getRotation()), gyro.getHeading());
+      // poseEstimator.addVisionMeasurement(vPose, Timer.getFPGATimestamp());
+      // odometry.resetPosition(new Pose2d(-robotY, robotX, odometry.getPoseMeters().getRotation()), gyro.getHeading());
     }
     poseEstimator.update(gyro.getHeading(), new DifferentialDriveWheelSpeeds(getLeftVelocity(), getRightVelocity()), getLeftDistanceMeter(), getRightDistanceMeter());
     SmartDashboard.putNumber("odo_rx", getPose().getX());
@@ -91,10 +93,16 @@ public class RomiDrivetrain extends SubsystemBase {
 
   private Pose2d getVisionPose(){
     double robotX = visionTable.getEntry("robot_x").getDouble(0);
-    robotX -= 0.6;
+    robotX += visionOffsetX;
     double robotY = visionTable.getEntry("robot_y").getDouble(0);
-    robotY += 2;
+    robotY += visionOffsetY;
     return new Pose2d(robotY, robotX, poseEstimator.getEstimatedPosition().getRotation());
+  }
+
+  public void resetVisionOffsets(Pose2d newPose){
+    Pose2d current = getVisionPose();
+    visionOffsetX += newPose.getX() - current.getX();
+    visionOffsetY += newPose.getY() - current.getY();
   }
 
   /**

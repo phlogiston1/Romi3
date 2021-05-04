@@ -20,7 +20,7 @@ import frc.robot.subsystems.RomiDrivetrain;
 /**
  * Testing the PathBase framework. just call start on this to drive the path.
  */
-public class SecondPath extends PathBase {
+public class FourthPath extends PathBase {
     /**
      * creates a new trajectory, and then sets it in the PathBase as the one to
      * follow. Call start on this to drive the path.
@@ -28,18 +28,15 @@ public class SecondPath extends PathBase {
      * @param subsystem drive train to pass to PathBase
      * @throws IOException
      */
-    public SecondPath(RomiDrivetrain subsystem) throws IOException {
+    public FourthPath(RomiDrivetrain subsystem) throws IOException {
         super(subsystem);
-        reversed = true;
+        // reversed = true;
         Trajectory exampleTrajectory = TrajectoryGenerator.generateTrajectory(
             // Start at the origin facing the +X direction
-            new Pose2d(-0.3, -0.35, Rotation2d.fromDegrees(90)),
+            new Pose2d(0,0, Rotation2d.fromDegrees(0)),
             List.of(
-                new Translation2d(-0.5, -0.25),
-                new Translation2d(-0.85, 0),
-                new Translation2d(-1.0, 0.05)
             ),
-            new Pose2d(-0.9,-0.5, Rotation2d.fromDegrees(110)),
+            new Pose2d(0.22,0.43, Rotation2d.fromDegrees(90)),
             getTrajectoryConfig()
         );
         //set the trajectory
